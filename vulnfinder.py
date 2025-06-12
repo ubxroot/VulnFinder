@@ -15,6 +15,7 @@ import pyfiglet
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
+from rich.markup import escape # NEW: Import escape function
 
 # Initialize the Typer application and Console for rich output
 # This line is placed at the top to ensure 'app' is defined globally
@@ -32,7 +33,6 @@ RESET = "\033[0m"
 UBXROOT_PART = pyfiglet.figlet_format("UBXROOT", font="slant")
 BANNER = f"""{RED}{UBXROOT_PART}
 VulnFinder - Comprehensive Web Vulnerability & Reconnaissance Tool
-github python3 scripted
 {RESET}"""
 
 # --- Common data for scans ---
@@ -263,11 +263,11 @@ def passive_subdomain_discovery(domain_or_ip):
             console.print("[+] No additional subdomains found via crt.sh for this target.", style="green")
 
     except requests.exceptions.RequestException as e:
-        console.print(f"{RED}[!] Error during subdomain discovery (crt.sh): {e}{RESET}")
+        console.print(f"{RED}[!] Error during subdomain discovery (crt.sh): {escape(str(e))}{RESET}") # Fix applied here
     except json.JSONDecodeError:
         console.print(f"{RED}[!] Error parsing crt.sh response. Invalid JSON received.{RESET}")
     except Exception as e:
-        console.print(f"{RED}[!] An unexpected error occurred during subdomain discovery: {e}{RESET}")
+        console.print(f"{RED}[!] An unexpected error occurred during subdomain discovery: {escape(str(e))}{RESET}") # Fix applied here
 
 # --- Threading / Worker Functions ---
 
@@ -297,7 +297,7 @@ def http_worker(task_queue):
                 check_open_redirect(base_url)
             # Add more check types as needed
         except Exception as e:
-            console.print(f"{RED}[!] Error executing HTTP check {check_type}: {e}{RESET}")
+            console.print(f"{RED}[!] Error executing HTTP check {check_type}: {escape(str(e))}{RESET}") # Fix applied here
         finally:
             task_queue.task_done()
 
@@ -314,7 +314,7 @@ def port_scan_single_port(ip, port):
             pass
         except Exception as e:
             # Catch unexpected errors during port scan
-            sys.stderr.write(f"{RED}[!] Error scanning port {port}: {e}{RESET}\n")
+            sys.stderr.write(f"{RED}[!] Error scanning port {port}: {escape(str(e))}{RESET}\n") # Fix applied here
 
 
 # --- Main execution flow ---
@@ -357,7 +357,8 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
         console.print(f"{RED}[!] Could not resolve {domain_or_ip}. Please ensure it's correct and reachable.{RESET}")
         return
     except Exception as e:
-        console.print(f"{RED}[!] An unexpected error occurred during domain resolution: {e}{RESET}")
+        # FIX: Escape the exception message 'e' to prevent MarkupError
+        console.print(f"{RED}[!] An unexpected error occurred during domain resolution: {escape(str(e))}{RESET}")
         return
 
     # --- HTTP-based Checks (threaded) ---
@@ -383,7 +384,6 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
             http_check_queue.put(None)
         for worker in workers:
             worker.join()
-        # No need for the "pass" here, as the return handles the exit
         return # Exit if initial HTTP response failed
 
     # Add other HTTP-based tasks to the queue
