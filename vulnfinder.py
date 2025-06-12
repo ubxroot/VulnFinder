@@ -9,20 +9,20 @@ from urllib.parse import urlparse, quote_plus
 from queue import Queue # For managing tasks in threads
 import json # For handling JSON responses from APIs
 import sys # For platform specific handling (e.g. crt.sh API)
-import typer
 
 import pyfiglet
+import typer # Ensure typer is imported
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from rich.markup import escape # NEW: Import escape function
+from rich.markup import escape # Import escape function for sanitizing strings
 
 # Initialize the Typer application and Console for rich output
-# This line is placed at the top to ensure 'app' is defined globally
+# This line is placed at the top to ensure 'app' is defined globally before any decorators.
 app = typer.Typer(help="VulnFinder - Comprehensive Web Vulnerability & Reconnaissance Tool")
 console = Console()
 
-# ANSI escape codes for colors
+# ANSI escape codes for colors (kept for banner generation but prefer rich markup for console.print)
 RED = "\033[91m"
 GREEN = "\033[92m"
 CYAN = "\033[96m"
@@ -232,7 +232,7 @@ def passive_subdomain_discovery(domain_or_ip):
     Performs passive subdomain discovery using crt.sh certificate transparency logs.
     Note: Requires an internet connection and direct access to crt.sh API.
     """
-    console.print(f"\n{CYAN}[+] Performing passive subdomain discovery for {domain_or_ip}...{RESET}")
+    console.print(f"\n[cyan][+] Performing passive subdomain discovery for {domain_or_ip}...[/cyan]")
     # crt.sh API for certificate transparency logs
     crtsh_url = f"https://crt.sh/?q=%25.{domain_or_ip}&output=json"
     
@@ -256,18 +256,18 @@ def passive_subdomain_discovery(domain_or_ip):
                          found_subdomains.add(name.lower())
         
         if found_subdomains:
-            console.print(f"{GREEN}[+] Found {len(found_subdomains)} potential subdomains:{RESET}")
+            console.print(f"[green][+] Found {len(found_subdomains)} potential subdomains:[/green]")
             for sd in sorted(list(found_subdomains)):
                 console.print(f"    - {sd}")
         else:
-            console.print("[+] No additional subdomains found via crt.sh for this target.", style="green")
+            console.print("[green][+] No additional subdomains found via crt.sh for this target.[/green]")
 
     except requests.exceptions.RequestException as e:
-        console.print(f"{RED}[!] Error during subdomain discovery (crt.sh): {escape(str(e))}{RESET}") # Fix applied here
+        console.print(f"[red][!] Error during subdomain discovery (crt.sh): {escape(str(e))}[/red]")
     except json.JSONDecodeError:
-        console.print(f"{RED}[!] Error parsing crt.sh response. Invalid JSON received.{RESET}")
+        console.print(f"[red][!] Error parsing crt.sh response. Invalid JSON received.[/red]")
     except Exception as e:
-        console.print(f"{RED}[!] An unexpected error occurred during subdomain discovery: {escape(str(e))}{RESET}") # Fix applied here
+        console.print(f"[red][!] An unexpected error occurred during subdomain discovery: {escape(str(e))}[/red]")
 
 # --- Threading / Worker Functions ---
 
@@ -297,7 +297,7 @@ def http_worker(task_queue):
                 check_open_redirect(base_url)
             # Add more check types as needed
         except Exception as e:
-            console.print(f"{RED}[!] Error executing HTTP check {check_type}: {escape(str(e))}{RESET}") # Fix applied here
+            console.print(f"[red][!] Error executing HTTP check {check_type}: {escape(str(e))}[/red]")
         finally:
             task_queue.task_done()
 
@@ -314,7 +314,7 @@ def port_scan_single_port(ip, port):
             pass
         except Exception as e:
             # Catch unexpected errors during port scan
-            sys.stderr.write(f"{RED}[!] Error scanning port {port}: {escape(str(e))}{RESET}\n") # Fix applied here
+            sys.stderr.write(f"[red][!] Error scanning port {port}: {escape(str(e))}[/red]\n")
 
 
 # --- Main execution flow ---
@@ -352,17 +352,17 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
     ip_address = None
     try:
         ip_address = socket.gethostbyname(domain_or_ip)
-        console.print(f"{CYAN}[+] Target resolved: Domain=[/][white]{domain_or_ip}[/][CYAN], IP=[/][white]{ip_address}{RESET}")
+        console.print(f"[cyan][+] Target resolved: Domain=[/][white]{domain_or_ip}[/][cyan], IP=[/][white]{ip_address}[/cyan]")
     except socket.gaierror:
-        console.print(f"{RED}[!] Could not resolve {domain_or_ip}. Please ensure it's correct and reachable.{RESET}")
+        console.print(f"[red][!] Could not resolve {domain_or_ip}. Please ensure it's correct and reachable.[/red]")
         return
     except Exception as e:
         # FIX: Escape the exception message 'e' to prevent MarkupError
-        console.print(f"{RED}[!] An unexpected error occurred during domain resolution: {escape(str(e))}{RESET}")
+        console.print(f"[red][!] An unexpected error occurred during domain resolution: {escape(str(e))}[/red]")
         return
 
     # --- HTTP-based Checks (threaded) ---
-    console.print(f"\n{CYAN}[+] Starting HTTP-based vulnerability checks...{RESET}")
+    console.print(f"\n[cyan][+] Starting HTTP-based vulnerability checks...[/cyan]")
     num_worker_threads = 5 # Number of concurrent threads for HTTP checks
     
     # Create worker threads
@@ -378,7 +378,7 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
     if initial_response:
         http_check_queue.put(("headers", (target_url, initial_response), {}))
     else:
-        console.print(f"{RED}[!] Could not get initial HTTP response from {target_url}. Skipping HTTP checks.{RESET}")
+        console.print(f"[red][!] Could not get initial HTTP response from {target_url}. Skipping HTTP checks.[/red]")
         # Put sentinels to terminate workers if initial fetch failed
         for _ in range(num_worker_threads):
             http_check_queue.put(None)
@@ -402,7 +402,7 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
 
 
     # --- Port Scan (threaded) ---
-    console.print(f"\n{CYAN}[+] Starting port scan on {ip_address}...{RESET}")
+    console.print(f"\n[cyan][+] Starting port scan on {ip_address}...[/cyan]")
     port_scan_threads = []
     for port in COMMON_PORTS:
         t = threading.Thread(target=port_scan_single_port, args=(ip_address, port))
@@ -413,16 +413,16 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
         t.join() # Wait for all port scan threads to complete
 
     if port_scan_results:
-        console.print(f"{GREEN}[+] Found {len(port_scan_results)} open common ports: {sorted(port_scan_results)}{RESET}")
+        console.print(f"[green][+] Found {len(port_scan_results)} open common ports: {sorted(port_scan_results)}[/green]")
     else:
-        console.print("[+] No common ports open.", style="green")
+        console.print("[green][+] No common ports open.[/green]")
 
     # --- Passive Reconnaissance ---
     passive_subdomain_discovery(domain_or_ip)
 
 
     # --- Display All Findings in a Table ---
-    console.print(f"\n{YELLOW}--- Consolidated Scan Results ---{RESET}")
+    console.print(f"\n[yellow]--- Consolidated Scan Results ---[/yellow]")
     if all_findings:
         table = Table(title="Vulnerability Findings", show_header=True, header_style="bold magenta")
         table.add_column("Type", style="bold green", min_width=15)
@@ -445,9 +445,9 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
             )
         console.print(table)
     else:
-        console.print(f"\n{GREEN}[+] No specific web vulnerabilities or sensitive paths identified. Good job!{RESET}")
+        console.print(f"[green][+] No specific web vulnerabilities or sensitive paths identified. Good job![/green]")
 
-    console.print(f"\n{GREEN}[+] VulnFinder scan complete. Review results above.{RESET}")
+    console.print(f"\n[green][+] VulnFinder scan complete. Review results above.[/green]")
 
 
 if __name__ == "__main__":
