@@ -15,6 +15,11 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
+# Initialize the Typer application and Console for rich output
+# This line is placed at the top to ensure 'app' is defined globally
+app = typer.Typer(help="VulnFinder - Comprehensive Web Vulnerability & Reconnaissance Tool")
+console = Console()
+
 # ANSI escape codes for colors
 RED = "\033[91m"
 GREEN = "\033[92m"
@@ -48,7 +53,7 @@ findings_lock = threading.Lock() # Lock to safely add findings from multiple thr
 # Each check is a dictionary defining its type, severity, description, and remediation.
 VULNERABILITY_CHECKS = [
     # HTTP Header Checks
-    {"type": "security_header_missing_hsts", "severity": "Medium", "description": "Missing Strict-Transport-Security (HSTS) header. HTTPS might not be enforced.", "remediation": "Implement HSTS header to enforce HTTPS-only connections: `Strict-Transport-Transport: max-age=31536000; includeSubDomains`."},
+    {"type": "security_header_missing_hsts", "severity": "Medium", "description": "Missing Strict-Transport-Security (HSTS) header. HTTPS might not be enforced.", "remediation": "Implement HSTS header to enforce HTTPS-only connections: `Strict-Transport-Security: max-age=31536000; includeSubDomains`."},
     {"type": "security_header_missing_xfo", "severity": "Medium", "description": "Missing X-Frame-Options header. Site might be vulnerable to Clickjacking.", "remediation": "Implement X-Frame-Options header to prevent embedding: `X-Frame-Options: DENY` or `SAMEORIGIN`."},
     {"type": "security_header_missing_xcto", "severity": "Medium", "description": "Missing X-Content-Type-Options header. Browser might perform MIME sniffing, leading to XSS.", "remediation": "Implement X-Content-Type-Options header: `X-Content-Type-Options: nosniff`."},
     {"type": "security_header_missing_csp", "severity": "High", "description": "Missing Content-Security-Policy (CSP) header. Site might be vulnerable to various attacks like XSS, data injection.", "remediation": "Implement a strong Content-Security-Policy header to restrict content sources."},
@@ -377,14 +382,7 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
             http_check_queue.put(None)
         for worker in workers:
             worker.join()
-        # Proceed to port scan
-        if ip_address:
-            # We need to call port_scan directly here, as it's not managed by http_check_queue
-            # (which is specifically for HTTP-based tasks)
-            # The original structure had port_scan in main(), so let's call it here.
-            # To ensure the logic flows, I'll move the actual port scan logic into a separate
-            # function that can be called directly.
-            pass # We will call port_scan() below after all http checks, if HTTP checks are successful
+        # No need for the "pass" here, as the return handles the exit
         return # Exit if initial HTTP response failed
 
     # Add other HTTP-based tasks to the queue
@@ -403,8 +401,6 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
 
 
     # --- Port Scan (threaded) ---
-    # This block was already correctly handling port scanning in a threaded manner,
-    # and it was outside the http_worker queue, so we'll just call it here after HTTP checks.
     console.print(f"\n{CYAN}[+] Starting port scan on {ip_address}...{RESET}")
     port_scan_threads = []
     for port in COMMON_PORTS:
