@@ -63,3 +63,6 @@ python vulnfinder.py --scan system --enrich-cve --output json
 * Threat intelligence APIs
 * Output format and location
 * CVE feed preferences
+
+## 📝 License
+MIT License.
