@@ -9,6 +9,7 @@ from urllib.parse import urlparse, quote_plus
 from queue import Queue # For managing tasks in threads
 import json # For handling JSON responses from APIs
 import sys # For platform specific handling (e.g. crt.sh API)
+import typer
 
 import pyfiglet
 from rich.console import Console
