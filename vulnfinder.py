@@ -23,6 +23,7 @@ app = typer.Typer(help="VulnFinder - Comprehensive Web Vulnerability & Reconnais
 console = Console()
 
 # ANSI escape codes for colors (kept for banner generation but prefer rich markup for console.print)
+# These are only used for the static BANNER string which is printed directly.
 RED = "\033[91m"
 GREEN = "\033[92m"
 CYAN = "\033[96m"
@@ -352,7 +353,8 @@ def main(target: str = typer.Argument(..., help="Target URL (e.g., http://exampl
     ip_address = None
     try:
         ip_address = socket.gethostbyname(domain_or_ip)
-        console.print(f"[cyan][+] Target resolved: Domain=[/][white]{domain_or_ip}[/][cyan], IP=[/][white]{ip_address}[/cyan]")
+        # FIX: Correct rich markup for target resolved message
+        console.print(f"[cyan][+] Target resolved: Domain=[/cyan][white]{domain_or_ip}[/white][cyan], IP=[/cyan][white]{ip_address}[/white]")
     except socket.gaierror:
         console.print(f"[red][!] Could not resolve {domain_or_ip}. Please ensure it's correct and reachable.[/red]")
         return
