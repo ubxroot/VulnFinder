@@ -48,15 +48,13 @@ pip install -r requirements.txt
 ```
 
 ## ⚙️ Usage
+# 📌 Examples
 
-# Basic system vulnerability scan
-python vulnfinder.py --scan system
-
-# Scan a binary file
-python vulnfinder.py --scan binary --file /path/to/file
-
-# Enable CVE enrichment and output in JSON
-python vulnfinder.py --scan system --enrich-cve --output json
+```bash
+python3 vulnfinder.py https://example.com
+python3 vulnfinder.py 192.168.1.1
+python3 vulnfinder.py targetsite.com
+```
 
 ## 📁 Configuration
 # Customize the config.yaml file for:
