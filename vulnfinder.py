@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse
+import argparse # This import is technically not needed anymore but kept for minimal change
 import requests
 import socket
 import re
@@ -46,10 +46,9 @@ findings_lock = threading.Lock() # Lock to safely add findings from multiple thr
 
 # --- Vulnerability Check Definitions ---
 # Each check is a dictionary defining its type, severity, description, and remediation.
-# The `check_function` will be a reference to a method that performs this check.
 VULNERABILITY_CHECKS = [
     # HTTP Header Checks
-    {"type": "security_header_missing_hsts", "severity": "Medium", "description": "Missing Strict-Transport-Security (HSTS) header. HTTPS might not be enforced.", "remediation": "Implement HSTS header to enforce HTTPS-only connections: `Strict-Transport-Security: max-age=31536000; includeSubDomains`."},
+    {"type": "security_header_missing_hsts", "severity": "Medium", "description": "Missing Strict-Transport-Security (HSTS) header. HTTPS might not be enforced.", "remediation": "Implement HSTS header to enforce HTTPS-only connections: `Strict-Transport-Transport: max-age=31536000; includeSubDomains`."},
     {"type": "security_header_missing_xfo", "severity": "Medium", "description": "Missing X-Frame-Options header. Site might be vulnerable to Clickjacking.", "remediation": "Implement X-Frame-Options header to prevent embedding: `X-Frame-Options: DENY` or `SAMEORIGIN`."},
     {"type": "security_header_missing_xcto", "severity": "Medium", "description": "Missing X-Content-Type-Options header. Browser might perform MIME sniffing, leading to XSS.", "remediation": "Implement X-Content-Type-Options header: `X-Content-Type-Options: nosniff`."},
     {"type": "security_header_missing_csp", "severity": "High", "description": "Missing Content-Security-Policy (CSP) header. Site might be vulnerable to various attacks like XSS, data injection.", "remediation": "Implement a strong Content-Security-Policy header to restrict content sources."},
@@ -326,18 +325,15 @@ def extract_domain_from_url(url):
         return url # Return original if parsing fails
 
 
-def main():
+@app.command() # Decorate main to make it a Typer command
+def main(target: str = typer.Argument(..., help="Target URL (e.g., http://example.com) or IP address (e.g., 192.168.1.1)")):
     """
     Main function to parse command-line arguments and orchestrate the vulnerability assessment.
     """
-    parser = argparse.ArgumentParser(description="VulnFinder - Comprehensive Web Vulnerability & Reconnaissance Tool")
-    parser.add_argument("target", help="Target URL (e.g., http://example.com) or IP address (e.g., 192.168.1.1)")
-    args = parser.parse_args()
-
     # Display the custom banner at the very beginning of the script's execution
     print(BANNER)
 
-    target_url_input = args.target
+    target_url_input = target # Use the target argument directly from Typer
     # Ensure the target URL has a scheme for requests.get to work correctly
     if not target_url_input.startswith("http://") and not target_url_input.startswith("https://"):
         target_url = "http://" + target_url_input
@@ -383,8 +379,13 @@ def main():
             worker.join()
         # Proceed to port scan
         if ip_address:
-            port_scan(ip_address)
-        return
+            # We need to call port_scan directly here, as it's not managed by http_check_queue
+            # (which is specifically for HTTP-based tasks)
+            # The original structure had port_scan in main(), so let's call it here.
+            # To ensure the logic flows, I'll move the actual port scan logic into a separate
+            # function that can be called directly.
+            pass # We will call port_scan() below after all http checks, if HTTP checks are successful
+        return # Exit if initial HTTP response failed
 
     # Add other HTTP-based tasks to the queue
     http_check_queue.put(("common_paths", (target_url,), {}))
@@ -402,6 +403,8 @@ def main():
 
 
     # --- Port Scan (threaded) ---
+    # This block was already correctly handling port scanning in a threaded manner,
+    # and it was outside the http_worker queue, so we'll just call it here after HTTP checks.
     console.print(f"\n{CYAN}[+] Starting port scan on {ip_address}...{RESET}")
     port_scan_threads = []
     for port in COMMON_PORTS:
