@@ -1,20 +1,14 @@
-# Core dependencies
-rich==13.7.1
-colorama==0.4.6
+# Required libraries
+requests>=2.25.1
 
-# For hash calculation and file operations
-pefile==2023.2.7       # For PE (Windows binary) analysis
-yara-python==4.3.1      # YARA integration (optional, if used)
-requests==2.31.0        # For API calls (e.g., VirusTotal, CVE feeds)
+# Optional: Uncomment if you want cross-platform colored terminal output
+# colorama>=0.4.4
 
-# For Linux system scanning (optional)
-psutil==5.9.8           # For process and system info
-py-cpuinfo==9.0.0       # System hardware info (optional)
+# Optional: Uncomment if you plan to use Python-nmap for advanced port scanning
+# python-nmap>=0.7.1
 
-# For CVE and vulnerability enrichment
-pyyaml==6.0.1           # If using a YAML config
-cve-search==1.0.0       # Optional if you're integrating CVE search APIs or local database (can be custom)
+# Optional: BeautifulSoup for HTML content inspection (future use)
+# beautifulsoup4>=4.10.0
 
-# Optional (for PDF/HTML reports in future versions)
-pdfkit==1.0.0
-Jinja2==3.1.4
+# Optional: lxml for fast HTML/XML parsing (used with BeautifulSoup)
+# lxml>=4.6.3
