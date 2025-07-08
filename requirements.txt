@@ -1,4 +1,12 @@
-requests
-pyfiglet
-rich
 typer
+rich
+requests
+yara-python
+python-nmap
+tabulate
+pandas
+pyyaml
+Jinja2
+lxml
+beautifulsoup4
+python-dotenv 
